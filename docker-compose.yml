@@ -1,11 +1,11 @@
 services:
-  web:
-    build: ./server
-    container_name: express_app
-    expose:
-      - 3000
-    networks:
-      - app-network
+  # web:
+  #   build: ./server
+  #   container_name: express_app
+  #   expose:
+  #     - 3000
+  #   networks:
+  #     - app-network
 
   nginx:
     image: openresty/openresty:alpine
@@ -17,7 +17,15 @@ services:
       - nginx_cache:/var/cache/nginx
     command: sh -c "addgroup -S nginx && adduser -S nginx -G nginx && mkdir -p /var/cache/nginx && chown -R nginx:nginx /var/cache/nginx && nginx -g 'daemon off;'"
     depends_on:
-      - web
+      - ui
+    networks:
+      - app-network
+
+  ui:
+    image: nextjs-app
+    container_name: next_app
+    ports:
+      - "3000:3000"
     networks:
       - app-network
 
