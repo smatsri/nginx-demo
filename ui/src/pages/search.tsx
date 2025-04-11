@@ -1,11 +1,20 @@
 import { GetServerSideProps } from "next";
 
-const SearchPage = ({ query, date }: { query: string; date: string }) => {
+type SearchPageProps = {
+  query: string;
+  date: string;
+  time: string;
+};
+
+const SearchPageProps = (props: SearchPageProps) => props;
+
+const SearchPage = ({ query, date, time }: SearchPageProps) => {
   return (
     <div>
       <h1>SearchPage</h1>
       <p>Search results for {query}</p>
       <p>Date: {date}</p>
+      <p>Time: {time}</p>
     </div>
   );
 };
@@ -26,9 +35,10 @@ export const getServerSideProps: GetServerSideProps = async ({
   );
 
   return {
-    props: {
+    props: SearchPageProps({
       query: queryParams,
       date: new Date().toISOString(),
-    },
+      time: new Date().toLocaleTimeString(),
+    }),
   };
 };
