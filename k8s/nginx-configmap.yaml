@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=STATIC:10m inactive=1h use_temp_path=off;
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://express-app-service:3000;
+
+            # Cache configuration
+            proxy_cache STATIC;
+            proxy_cache_valid 200 302 60s;
+            proxy_cache_use_stale updating error timeout invalid_header http_500 http_502 http_503 http_504;
+            proxy_cache_background_update on;
+
+            proxy_ignore_headers Set-Cookie;
+            proxy_hide_header App-Cache-Control;
+            more_set_headers "Cache-Control: $upstream_http_app_cache_control";
+            add_header X-Proxy-Cache $upstream_cache_status;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
+
+        location /search {
+            proxy_pass http://express-app-service:3000;
+
+            proxy_cache STATIC;
+            proxy_cache_valid 200 302 60s;
+            proxy_cache_use_stale updating error timeout invalid_header http_500 http_502 http_503 http_504;
+            proxy_cache_background_update on;
+
+            proxy_hide_header App-Cache-Control;
+            more_set_headers "Cache-Control: $upstream_http_app_cache_control";
+
+            if ($arg_year != "") {
+                set $new_args "year=$arg_year";
+            }
+
+            rewrite ^/search$ /search?$new_args? break;
+
+            proxy_set_header Host $host;
+            proxy_http_version 1.1;
+            proxy_set_header Connection '';
+            add_header X-Proxy-Cache $upstream_cache_status;
+        }
+    }

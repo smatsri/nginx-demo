@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-proxy
+  template:
+    metadata:
+      labels:
+        app: nginx-proxy
+    spec:
+      containers:
+        - name: nginx-proxy
+          image: openresty/openresty:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+          command:
+            - sh
+            - -c
+            - |
+              addgroup -S nginx && adduser -S nginx -G nginx && \
+              mkdir -p /var/cache/nginx && \
+              chown -R nginx:nginx /var/cache/nginx && \
+              nginx -g 'daemon off;'
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+        - name: nginx-cache
+          persistentVolumeClaim:
+            claimName: nginx-cache-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-proxy-service
+spec:
+  selector:
+    app: nginx-proxy
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+  type: NodePort # Or LoadBalancer if you're using a cloud provider
